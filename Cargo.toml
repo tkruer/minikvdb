@@ -1,0 +1,28 @@
+[package]
+name = "minikvdb"
+version = "0.1.0"
+edition = "2021"
+authors = ["Tyler Kruer tyler@tkruer.com"]
+description = """
+a really basic KV store replicating basic Redis functionality.
+**not to be used in production under any means**
+"""
+
+[[bin]]
+name = "minikvdb-cli"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name = "minikvdb-server"
+path = "src/bin/server.rs"
+
+
+[dependencies]
+async-stream = "0.3.6"
+atoi = "2.0.0"
+bytes = "1.10.1"
+clap = "4.5.32"
+tokio = { version = "1.44.0", features = ["test-util", "full"] }
+tokio-stream = "0.1.17"
+tracing = "0.1.41"
+
