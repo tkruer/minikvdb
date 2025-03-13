@@ -1,4 +1,9 @@
-use crate::{Command, Connection, Db, DbDropGuard, Shutdown};
+use crate::{
+    command::Command,
+    connection::Connection,
+    db::{Db, DbDropGuard},
+    shutdown::Shutdown,
+};
 
 use std::future::Future;
 use std::sync::Arc;
@@ -33,7 +38,7 @@ struct Handler {
     _shutdown_complete: mpsc::Sender<()>,
 }
 
-const MAX_CONNECTIONS: usize = 250;
+const MAX_CONNECTIONS: usize = 10_000;
 
 pub async fn run(listener: TcpListener, shutdown: impl Future) {
     let (notify_shutdown, _) = broadcast::channel(1);
@@ -141,6 +146,7 @@ impl Handler {
 
             let cmd = Command::from_frame(frame)?;
 
+            info!("incomming command");
             debug!(?cmd);
 
             cmd.apply(&self.db, &mut self.connection, &mut self.shutdown)

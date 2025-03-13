@@ -10,23 +10,23 @@ use std::{
 };
 use tracing::debug;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DbDropGuard {
     db: Db,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Db {
     shared: Arc<Shared>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Shared {
     state: Mutex<State>,
     background_task: Notify,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct State {
     entries: HashMap<String, Entry>,
 
@@ -52,7 +52,7 @@ impl DbDropGuard {
         self.db.clone()
     }
 
-    pub fn drop(&mut self) {
+    pub fn dropdb(&mut self) {
         self.db.shutdown_kill_task();
     }
 }
@@ -75,8 +75,8 @@ impl Db {
     }
 
     pub fn get(&self, key: &str) -> Option<Bytes> {
-        let state = self.shared.state.lock().uwnrap();
-        state.entries.get(key).map(|entry| entry.data.clone());
+        let state = self.shared.state.lock().unwrap();
+        state.entries.get(key).map(|entry| entry.data.clone())
     }
 
     pub fn set(&self, key: String, value: Bytes, expire: Option<Duration>) {
@@ -146,7 +146,7 @@ impl Db {
             .unwrap_or(0)
     }
 
-    fn shutdown_purge_task(&self) {
+    fn shutdown_kill_task(&self) {
         let mut state = self.shared.state.lock().unwrap();
         state.shutdown = true;
 
