@@ -49,6 +49,7 @@ enum Command {
     Subscribe {
         channels: Vec<String>,
     },
+    ShutdownSave {},
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -114,7 +115,7 @@ async fn main() -> minikvdb::Result<()> {
                     msg.channel, msg.content
                 );
             }
-        }
+        } //     Command::ShutdownSave {} => client.shutdown_save(),
     }
 
     Ok(())

@@ -2,6 +2,7 @@ use crate::{
     command::Command,
     connection::Connection,
     db::{Db, DbDropGuard},
+    dumper::dump_kv_store,
     shutdown::Shutdown,
 };
 
@@ -12,7 +13,7 @@ use tokio::{
     sync::{broadcast, mpsc, Semaphore},
     time::{self, Duration},
 };
-use tracing::{debug, error, info, instrument};
+use tracing::{debug, error, info, instrument, warn};
 
 #[derive(Debug)]
 struct Listener {
@@ -60,6 +61,7 @@ pub async fn run(listener: TcpListener, shutdown: impl Future) {
         }
         _ = shutdown => {
             info!("shutting down");
+
         }
     }
 

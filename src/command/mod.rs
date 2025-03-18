@@ -16,6 +16,15 @@ pub use ping::Ping;
 mod unknown;
 pub use unknown::Unknown;
 
+mod reload_save;
+pub use reload_save::ReloadSave;
+
+mod shutdown_no_save;
+pub use shutdown_no_save::ShutdownNoSave;
+
+mod shutdown_save;
+pub use shutdown_save::ShutdownSave;
+
 use crate::{connection::Connection, db::Db, frame::Frame, parser::Parser, shutdown::Shutdown};
 
 #[derive(Debug)]
@@ -26,6 +35,9 @@ pub enum Command {
     Subscribe(Subscribe),
     Unsubscribe(Unsubscribe),
     Ping(Ping),
+    ShutdownSave(ShutdownSave),
+    ShutdownNoSave(ShutdownNoSave),
+    ReloadSave(ReloadSave),
     Unknown(Unknown),
 }
 
@@ -42,30 +54,21 @@ impl Command {
             "subscribe" => Command::Subscribe(Subscribe::parse_frames(&mut parse)?),
             "unsubscribe" => Command::Unsubscribe(Unsubscribe::parse_frames(&mut parse)?),
             "ping" => Command::Ping(Ping::parse_frames(&mut parse)?),
+            "shutdownsave" => Command::ShutdownSave((ShutdownSave::parse_frames(&mut parse)?)),
+            "shutdownnosave" => {
+                Command::ShutdownNoSave((ShutdownNoSave::parse_frames(&mut parse)?))
+            }
+            "reloadsave" => Command::ReloadSave((ReloadSave::parse_frames(&mut parse)?)),
             _ => {
-                // The command is not recognized and an Unknown command is
-                // returned.
-                //
-                // `return` is called here to skip the `finish()` call below. As
-                // the command is not recognized, there is most likely
-                // unconsumed fields remaining in the `Parse` instance.
                 return Ok(Command::Unknown(Unknown::new(command_name)));
             }
         };
 
-        // Check if there is any remaining unconsumed fields in the `Parse`
-        // value. If fields remain, this indicates an unexpected frame format
-        // and an error is returned.
         parse.finish()?;
 
-        // The command has been successfully parsed
         Ok(command)
     }
 
-    /// Apply the command to the specified `Db` instance.
-    ///
-    /// The response is written to `dst`. This is called by the server in order
-    /// to execute a received command.
     pub(crate) async fn apply(
         self,
         db: &Db,
@@ -81,13 +84,15 @@ impl Command {
             Subscribe(cmd) => cmd.apply(db, dst, shutdown).await,
             Ping(cmd) => cmd.apply(dst).await,
             Unknown(cmd) => cmd.apply(dst).await,
-            // `Unsubscribe` cannot be applied. It may only be received from the
-            // context of a `Subscribe` command.
+
+            ShutdownSave(cmd) => cmd.apply(db, dst).await,
+            ShutdownNoSave(cmd) => cmd.apply(db, dst).await,
+            ReloadSave(cmd) => cmd.apply(db, dst).await,
+
             Unsubscribe(_) => Err("`Unsubscribe` is unsupported in this context".into()),
         }
     }
 
-    /// Returns the command name
     pub(crate) fn get_name(&self) -> &str {
         match self {
             Command::Get(_) => "get",
@@ -96,6 +101,9 @@ impl Command {
             Command::Subscribe(_) => "subscribe",
             Command::Unsubscribe(_) => "unsubscribe",
             Command::Ping(_) => "ping",
+            Command::ShutdownSave(_) => "shutdownsave",
+            Command::ShutdownNoSave(_) => "shutdownnosave",
+            Command::ReloadSave(_) => "reloadsave",
             Command::Unknown(cmd) => cmd.get_name(),
         }
     }

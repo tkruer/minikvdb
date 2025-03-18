@@ -1,4 +1,4 @@
-use crate::command::{Get, Ping, Publish, Set, Subscribe, Unsubscribe};
+use crate::command::{Get, Ping, Publish, Set, ShutdownSave, Subscribe, Unsubscribe};
 use crate::{connection::Connection, frame::Frame};
 
 use async_stream::try_stream;
@@ -152,6 +152,10 @@ impl Client {
                 Err(err.into())
             }
         }
+    }
+
+    pub async fn shutdown_save(&mut self) -> crate::Result<()> {
+        Ok(())
     }
 }
 

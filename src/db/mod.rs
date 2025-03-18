@@ -4,6 +4,8 @@ use tokio::{
 };
 
 use bytes::Bytes;
+
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeSet, HashMap},
     sync::{Arc, Mutex},
@@ -37,9 +39,10 @@ pub struct State {
     shutdown: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Entry {
     data: Bytes,
+    #[serde(skip)]
     expires_at: Option<Instant>,
 }
 
@@ -152,6 +155,15 @@ impl Db {
 
         drop(state);
         self.shared.background_task.notify_one();
+    }
+
+    pub fn get_all(&self) -> Vec<(String, Entry)> {
+        let state = self.shared.state.lock().unwrap();
+        state
+            .entries
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone())) // requires Entry to implement Clone
+            .collect()
     }
 }
 

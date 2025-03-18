@@ -1,3 +1,4 @@
+use crate::dumper::dump_kv_store;
 use tokio::sync::broadcast;
 
 #[derive(Debug)]
